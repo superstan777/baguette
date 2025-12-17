@@ -21,7 +21,6 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 export default function FlashcardScreen() {
   const [mode, setMode] = useState<Mode>("PRACTICE");
   const [newFlashcardText, setNewFlashcardText] = useState("");
-  const [autoTranslate, setAutoTranslate] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -63,7 +62,7 @@ export default function FlashcardScreen() {
     setIsSaving(true);
     setIsTranslating(true);
     try {
-      await saveFlashcard(newFlashcardText.trim(), autoTranslate);
+      await saveFlashcard(newFlashcardText.trim(), true);
       setNewFlashcardText("");
       setMode("PRACTICE");
     } catch (error) {
@@ -94,12 +93,10 @@ export default function FlashcardScreen() {
           <View style={[styles.modeContainer, { top: SCREEN_HEIGHT }]}>
             <AddMode
               newFlashcardText={newFlashcardText}
-              autoTranslate={autoTranslate}
               isSaving={isSaving}
               isTranslating={isTranslating}
               inputRef={inputRef}
               onTextChange={setNewFlashcardText}
-              onAutoTranslateChange={setAutoTranslate}
               onSave={handleSave}
             />
           </View>
