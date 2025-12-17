@@ -1,4 +1,3 @@
-import React from "react";
 import {
   DarkTheme,
   DefaultTheme,
@@ -6,19 +5,14 @@ import {
 } from "@react-navigation/native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 
-// Optional integration with `react-native-keyboard-controller` so that
-// components like `KeyboardStickyView` receive real keyboard context.
-// Falls back to a no-op provider when the native module isn't available
-// (e.g. in Expo Go), avoiding runtime crashes.
 let KeyboardProvider: React.ComponentType<{ children: React.ReactNode }>;
 
 try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  // @ts-ignore - optional dependency, may not be installed in all environments
   const KeyboardControllerModule = require("react-native-keyboard-controller");
   KeyboardProvider =
     KeyboardControllerModule.KeyboardProvider ||

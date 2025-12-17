@@ -69,6 +69,7 @@ export function AddMode({
                   value={newFlashcardText}
                   onChangeText={onTextChange}
                   multiline
+                  scrollEnabled={false}
                   returnKeyType="done"
                   onSubmitEditing={Keyboard.dismiss}
                 />
@@ -84,23 +85,21 @@ export function AddMode({
                 </View>
               )}
 
-              <View style={styles.buttonContainer}>
-                <Button
-                  title={
-                    isSaving
-                      ? isTranslating
-                        ? "Translating..."
-                        : "Saving..."
-                      : "Save"
-                  }
-                  onPress={onSave}
-                  disabled={isSaving || !newFlashcardText.trim()}
-                  loading={isSaving}
-                  variant="primary"
-                  fullWidth
-                  style={styles.saveButton}
-                />
-              </View>
+              <Button
+                title={
+                  isSaving
+                    ? isTranslating
+                      ? "Translating..."
+                      : "Saving..."
+                    : "Save"
+                }
+                onPress={onSave}
+                disabled={isSaving || !newFlashcardText.trim()}
+                loading={isSaving}
+                variant="primary"
+                fullWidth
+                style={styles.saveButton}
+              />
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
@@ -163,7 +162,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     paddingTop: 20,
     flexShrink: 0,
-    paddingHorizontal: 20,
+    // paddingHorizontal: 20,
     paddingBottom: 20,
   },
   saveButton: {

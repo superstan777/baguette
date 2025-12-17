@@ -42,16 +42,10 @@ export default function FlashcardScreen() {
     setMode,
   });
 
-  // Auto-focus input when switching to ADD mode
   useEffect(() => {
     if (mode === "ADD") {
-      // Delay focus to allow animation to complete
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 400);
-      return () => clearTimeout(timer);
+      inputRef.current?.focus();
     } else {
-      // Dismiss keyboard when switching away from ADD mode
       Keyboard.dismiss();
     }
   }, [mode]);
@@ -79,7 +73,6 @@ export default function FlashcardScreen() {
     <GestureHandlerRootView style={styles.container}>
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.content, animatedStyle]}>
-          {/* Always render both modes for infinite loop */}
           <View style={[styles.modeContainer, { top: 0 }]}>
             <PracticeMode
               currentCard={currentCard}
