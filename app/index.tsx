@@ -79,8 +79,6 @@ export default function FlashcardScreen() {
               lifetimeCount={lifetimeCount}
               showTranslation={showTranslation}
               onToggleTranslation={() => setShowTranslation(!showTranslation)}
-              onCorrect={handleCorrect}
-              onIncorrect={handleIncorrect}
             />
           </View>
           <View style={[styles.modeContainer, { top: SCREEN_HEIGHT }]}>
