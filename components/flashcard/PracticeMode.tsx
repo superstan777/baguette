@@ -1,11 +1,11 @@
 import { FlashcardCard } from "@/components/flashcard/FlashcardCard";
 import { PracticeHeader } from "@/components/flashcard/PracticeHeader";
-import { IconSymbol } from "@/components/ui/icon-symbol";
+import { PracticeMicButton } from "@/components/flashcard/PracticeMicButton";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Flashcard } from "@/utils/database";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface PracticeModeProps {
@@ -13,6 +13,7 @@ interface PracticeModeProps {
   lifetimeCount: number;
   showTranslation: boolean;
   onToggleTranslation: () => void;
+  onPronunciationCorrect: () => void;
 }
 
 export function PracticeMode({
@@ -20,6 +21,7 @@ export function PracticeMode({
   lifetimeCount,
   showTranslation,
   onToggleTranslation,
+  onPronunciationCorrect,
 }: PracticeModeProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
@@ -41,23 +43,26 @@ export function PracticeMode({
                 onToggleTranslation={onToggleTranslation}
               />
 
-              <TouchableOpacity
-                style={[
-                  styles.micButton,
-                  { backgroundColor: colors.tint + "20" },
-                ]}
-                onPress={() => {
-                  // Placeholder for future speech recognition integration
-                  console.log("Microphone pressed");
+              <PracticeMicButton
+                language="fr-FR"
+                expectedText={currentCard.translation}
+                onResult={(spoken, isCorrect) => {
+                  console.log(
+                    "Recognized speech:",
+                    spoken,
+                    "correct:",
+                    isCorrect
+                  );
+                  if (isCorrect) {
+                    onPronunciationCorrect();
+                  }
                 }}
-              >
-                <IconSymbol name="mic.fill" size={32} color={colors.tint} />
-              </TouchableOpacity>
+              />
             </View>
           ) : (
             <View style={styles.emptyState}>
               <Text style={[styles.emptyText, { color: colors.text }]}>
-                No flashcards yet. Swipe up to add one!
+                No flashcards yet. Swipe up with two fingers to add one!
               </Text>
             </View>
           )}

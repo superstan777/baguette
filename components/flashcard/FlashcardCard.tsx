@@ -1,6 +1,8 @@
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Flashcard } from "@/utils/database";
+import * as Speech from "expo-speech";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
@@ -85,9 +87,31 @@ export function FlashcardCard({
             backStyle,
           ]}
         >
-          <Text style={[styles.translationText, { color: colors.icon }]}>
-            {card.translation}
-          </Text>
+          <View style={styles.translationBackContent}>
+            <Text style={[styles.translationText, { color: colors.icon }]}>
+              {card.translation}
+            </Text>
+
+            <TouchableOpacity
+              style={styles.speakerButton}
+              onPress={() => {
+                // Read the French side of the flashcard aloud
+                const textToSpeak = card.translation || card.text;
+                if (textToSpeak) {
+                  Speech.stop();
+                  Speech.speak(textToSpeak, {
+                    language: "fr-FR",
+                  });
+                }
+              }}
+            >
+              <IconSymbol
+                name="speaker.wave.2.fill"
+                size={28}
+                color={colors.icon}
+              />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </TouchableOpacity>
     </View>
@@ -140,5 +164,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontStyle: "italic",
     textAlign: "center",
+  },
+  translationBackContent: {
+    width: "100%",
+    alignItems: "center",
+    gap: 16,
+  },
+  speakerButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
   },
 });

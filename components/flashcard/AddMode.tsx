@@ -75,16 +75,6 @@ export function AddMode({
                 />
               </View>
 
-              {isTranslating && (
-                <View style={styles.translatingContainer}>
-                  <Text
-                    style={[styles.translatingText, { color: colors.icon }]}
-                  >
-                    Translating...
-                  </Text>
-                </View>
-              )}
-
               <Button
                 title={
                   isSaving

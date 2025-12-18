@@ -22,7 +22,7 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     return db;
   }
 
-  db = await SQLite.openDatabaseAsync("flashcards.db");
+  db = await SQLite.openDatabaseAsync("flashcards_test.db");
 
   // Create flashcards table
   await db.execAsync(`
