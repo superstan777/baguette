@@ -1,7 +1,9 @@
+import correctSoundAsset from "@/assets/sounds/correct.mp3";
+import incorrectSoundAsset from "@/assets/sounds/incorrect.mp3";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import * as Speech from "expo-speech";
+import { Audio } from "expo-audio";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -40,6 +42,23 @@ export function PracticeMicButton({
   const [isBusy, setIsBusy] = useState(false);
   const isVoiceAvailable = !!Voice;
 
+  const playFeedbackSound = async (isCorrect: boolean) => {
+    try {
+      const { sound } = await Audio.Sound.createAsync(
+        isCorrect ? correctSoundAsset : incorrectSoundAsset
+      );
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (!status.isLoaded) return;
+        if (status.isLoaded && (status as any).didJustFinish) {
+          sound.unloadAsync().catch(() => {});
+        }
+      });
+      await sound.playAsync();
+    } catch (e) {
+      console.warn("Sound feedback error:", e);
+    }
+  };
+
   useEffect(() => {
     if (!Voice) {
       return;
@@ -76,17 +95,8 @@ export function PracticeMicButton({
         isCorrect = normalize(spoken) === normalize(expectedText);
       }
 
-      // Simple audio feedback for MVP
-      try {
-        Speech.stop();
-        if (isCorrect) {
-          Speech.speak("Correct", { language: "en-US" });
-        } else {
-          Speech.speak("Try again", { language: "en-US" });
-        }
-      } catch (e) {
-        console.warn("Speech feedback error:", e);
-      }
+      // Play feedback sound (correct / incorrect)
+      void playFeedbackSound(isCorrect);
 
       if (onResult) {
         onResult(spoken, isCorrect);
