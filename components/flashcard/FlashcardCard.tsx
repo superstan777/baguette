@@ -71,6 +71,7 @@ export function FlashcardCard({
             },
             frontStyle,
           ]}
+          pointerEvents={showTranslation ? "none" : "auto"}
         >
           <Text style={[styles.flashcardText, { color: colors.text }]}>
             {card.text}
@@ -86,6 +87,7 @@ export function FlashcardCard({
             },
             backStyle,
           ]}
+          pointerEvents={showTranslation ? "auto" : "none"}
         >
           <View style={styles.translationBackContent}>
             <Text style={[styles.translationText, { color: colors.icon }]}>
