@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   waveformContainer: {
-    width: 60, // mniejszy kontener wewnątrz przycisku
+    width: 100,
     height: 40,
   },
 });

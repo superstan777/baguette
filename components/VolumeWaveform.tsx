@@ -59,7 +59,7 @@ const AnimatedBar = ({ index, volume, canvasSize }: any) => {
     // Używamy animowanej wartości zamiast surowej
     const v = animatedVolume.value * sensitivity;
 
-    const minH = 4;
+    const minH = 8;
     const maxH = height * 0.9;
     const currentH = minH + v * (maxH - minH);
 
@@ -78,7 +78,7 @@ const AnimatedBar = ({ index, volume, canvasSize }: any) => {
       width={useDerivedValue(() => barProps.value.w)}
       height={useDerivedValue(() => barProps.value.h)}
       r={useDerivedValue(() => barProps.value.w / 2)}
-      color="black"
+      color="white"
     />
   );
 };
