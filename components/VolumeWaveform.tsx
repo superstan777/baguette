@@ -1,6 +1,6 @@
 import { Canvas, Group, RoundedRect } from "@shopify/react-native-skia";
 import React, { useState } from "react";
-import { LayoutChangeEvent, View } from "react-native";
+import { LayoutChangeEvent, StyleSheet, View } from "react-native";
 import {
   SharedValue,
   useDerivedValue,
@@ -9,41 +9,53 @@ import {
 
 interface VolumeWaveformProps {
   volume: SharedValue<number>;
+  color: string; // Dodany kolor z motywu
 }
 
 const BAR_COUNT = 7;
 const GAP_RATIO = 0.35;
 
-export const VolumeWaveform: React.FC<VolumeWaveformProps> = ({ volume }) => {
+export const VolumeWaveform: React.FC<VolumeWaveformProps> = ({
+  volume,
+  color,
+}) => {
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   const onLayout = (event: LayoutChangeEvent) => {
-    setSize(event.nativeEvent.layout);
+    const { width, height } = event.nativeEvent.layout;
+    if (width > 0 && height > 0) {
+      setSize({ width, height });
+    }
   };
 
-  if (size.width === 0) return <View style={{ flex: 1 }} onLayout={onLayout} />;
-
   return (
-    <View style={{ flex: 1 }} onLayout={onLayout}>
-      <Canvas style={{ flex: 1 }}>
-        <Group>
-          {Array.from({ length: BAR_COUNT }).map((_, i) => (
-            <AnimatedBar key={i} index={i} volume={volume} canvasSize={size} />
-          ))}
-        </Group>
-      </Canvas>
+    <View style={styles.container} onLayout={onLayout}>
+      {size.width > 0 && (
+        <Canvas style={styles.canvas}>
+          <Group>
+            {Array.from({ length: BAR_COUNT }).map((_, i) => (
+              <AnimatedBar
+                key={i}
+                index={i}
+                volume={volume}
+                canvasSize={size}
+                barColor={color}
+              />
+            ))}
+          </Group>
+        </Canvas>
+      )}
     </View>
   );
 };
 
-const AnimatedBar = ({ index, volume, canvasSize }: any) => {
-  // To jest "magiczny" krok: tworzymy animowaną wartość, która
-  // goni surową wartość z mikrofonu z dużą płynnością.
+const AnimatedBar = ({ index, volume, canvasSize, barColor }: any) => {
+  // Płynne opadanie (maślany efekt)
   const animatedVolume = useDerivedValue(() => {
     return withSpring(volume.value, {
-      damping: 15, // Mniejszy damping = bardziej sprężysty ruch
-      stiffness: 120, // Kontroluje szybkość reakcji
-      mass: 0.3,
+      damping: 25,
+      stiffness: 80, // Niższy stiffness dla płynniejszego opadania
+      mass: 0.8,
     });
   });
 
@@ -54,12 +66,11 @@ const AnimatedBar = ({ index, volume, canvasSize }: any) => {
 
     const centerIndex = (BAR_COUNT - 1) / 2;
     const distFromCenter = Math.abs(index - centerIndex) / centerIndex;
-    const sensitivity = 0.3 + 0.7 * Math.cos(distFromCenter * (Math.PI / 2.5));
+    const sensitivity = 0.4 + 0.6 * Math.cos(distFromCenter * (Math.PI / 2.5));
 
-    // Używamy animowanej wartości zamiast surowej
     const v = animatedVolume.value * sensitivity;
 
-    const minH = 8;
+    const minH = 6;
     const maxH = height * 0.9;
     const currentH = minH + v * (maxH - minH);
 
@@ -78,7 +89,18 @@ const AnimatedBar = ({ index, volume, canvasSize }: any) => {
       width={useDerivedValue(() => barProps.value.w)}
       height={useDerivedValue(() => barProps.value.h)}
       r={useDerivedValue(() => barProps.value.w / 2)}
-      color="white"
+      color={barColor}
     />
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    width: "100%",
+    height: "100%",
+  },
+  canvas: {
+    flex: 1,
+  },
+});
