@@ -1,181 +1,88 @@
-import correctSoundAsset from "@/assets/sounds/correct.mp3";
-import incorrectSoundAsset from "@/assets/sounds/incorrect.mp3";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Audio } from "expo-audio";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, TouchableOpacity } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+import SoundLevel from "react-native-sound-level";
+import { VolumeWaveform } from "../VolumeWaveform";
 
-// Optional integration with `react-native-voice`.
-// In Expo Go the native module is not available, so we guard the require
-// and gracefully disable voice recognition instead of crashing.
-// Use `any` here so TypeScript doesn't require type declarations
-// for `react-native-voice`.
-let Voice: any | null = null;
+const BAR_COUNT = 7;
+const THRESHOLD_DB = -50; // minimalny poziom dźwięku, poniżej traktowany jako cisza
 
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  // @ts-ignore - optional dependency, may not be installed in all environments
-  Voice =
-    require("react-native-voice").default || require("react-native-voice");
-} catch (e) {
-  Voice = null;
-}
-
-interface PracticeMicButtonProps {
-  language?: string;
-  /** Text the user is expected to say (e.g. French side of the card). */
-  expectedText?: string;
-  /** Callback with spoken text and simple correctness flag. */
-  onResult?: (spoken: string, isCorrect: boolean) => void;
-}
-
-export function PracticeMicButton({
-  language = "fr-FR",
-  expectedText,
-  onResult,
-}: PracticeMicButtonProps) {
+export function PracticeMicButton() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
-  const [isRecording, setIsRecording] = useState(false);
-  const [isBusy, setIsBusy] = useState(false);
-  const isVoiceAvailable = !!Voice;
 
-  const playFeedbackSound = async (isCorrect: boolean) => {
-    try {
-      const { sound } = await Audio.Sound.createAsync(
-        isCorrect ? correctSoundAsset : incorrectSoundAsset
-      );
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (!status.isLoaded) return;
-        if (status.isLoaded && (status as any).didJustFinish) {
-          sound.unloadAsync().catch(() => {});
-        }
-      });
-      await sound.playAsync();
-    } catch (e) {
-      console.warn("Sound feedback error:", e);
-    }
-  };
+  const [recording, setRecording] = useState(false);
+  const [levels, setLevels] = useState<Uint8Array>(
+    new Uint8Array(BAR_COUNT).fill(0)
+  );
 
+  // Stop monitoring przy odmontowaniu komponentu
   useEffect(() => {
-    if (!Voice) {
-      return;
-    }
-
-    Voice.onSpeechStart = () => {
-      setIsBusy(false);
-      setIsRecording(true);
-    };
-
-    Voice.onSpeechEnd = () => {
-      setIsRecording(false);
-    };
-
-    Voice.onSpeechResults = (e: any) => {
-      const spoken: string | undefined = e.value?.[0];
-      if (!spoken) return;
-
-      console.log("Speech result (raw):", spoken);
-
-      let isCorrect = false;
-      if (expectedText) {
-        const normalize = (value: string) =>
-          value
-            .toLowerCase()
-            .normalize("NFD")
-            // remove diacritics
-            .replace(/\p{Diacritic}/gu, "")
-            // keep only letters, basic punctuation and spaces
-            .replace(/[^a-zà-ÿœç'\s-]/gi, "")
-            .replace(/\s+/g, " ")
-            .trim();
-
-        isCorrect = normalize(spoken) === normalize(expectedText);
-      }
-
-      // Play feedback sound (correct / incorrect)
-      void playFeedbackSound(isCorrect);
-
-      if (onResult) {
-        onResult(spoken, isCorrect);
-      } else {
-        console.log("Recognized speech:", spoken, "correct:", isCorrect);
-      }
-    };
-
-    Voice.onSpeechError = (e: any) => {
-      console.warn("Voice recognition error:", e);
-      setIsRecording(false);
-      setIsBusy(false);
-    };
-
     return () => {
-      Voice?.destroy()
-        .then(Voice.removeAllListeners)
-        .catch(() => {});
+      SoundLevel.stop();
     };
-  }, [onResult]);
+  }, []);
 
-  const startRecording = async () => {
-    if (!Voice) {
-      console.warn("react-native-voice is not available in this environment.");
-      return;
-    }
-    if (isRecording) return;
+  const toggleRecording = () => {
+    if (recording) {
+      SoundLevel.stop();
+      setRecording(false);
+      setLevels(new Uint8Array(BAR_COUNT).fill(0));
+    } else {
+      SoundLevel.start();
 
-    try {
-      setIsBusy(true);
-      await Voice.start(language);
-    } catch (error) {
-      console.warn("Voice start error:", error);
-      setIsRecording(false);
-    } finally {
-      setIsBusy(false);
+      SoundLevel.onNewFrame = (data: { value: number; rawValue: number }) => {
+        let value = data.value;
+
+        // filtr szumu tła
+        if (value < THRESHOLD_DB) value = THRESHOLD_DB;
+
+        // normalizacja: THRESHOLD_DB..0 -> 0..255
+        const normalized = Math.min(
+          255,
+          Math.max(
+            0,
+            Math.floor(((value - THRESHOLD_DB) / -THRESHOLD_DB) * 255)
+          )
+        );
+
+        const newBars = new Uint8Array(BAR_COUNT);
+        for (let i = 0; i < BAR_COUNT; i++) {
+          newBars[i] = normalized * (1 - i / BAR_COUNT);
+        }
+
+        setLevels(newBars);
+      };
+
+      setRecording(true);
     }
   };
-
-  const stopRecording = async () => {
-    if (!Voice) {
-      return;
-    }
-    if (!isRecording) return;
-
-    try {
-      setIsBusy(true);
-      await Voice.stop();
-    } catch (error) {
-      console.warn("Voice stop error:", error);
-    } finally {
-      setIsBusy(false);
-    }
-  };
-
-  const backgroundColor = isRecording ? colors.tint + "40" : colors.tint + "20";
 
   return (
     <TouchableOpacity
-      style={[styles.micButton, { backgroundColor }]}
-      onPressIn={startRecording}
-      onPressOut={stopRecording}
-      disabled={isBusy || !isVoiceAvailable}
+      onPress={toggleRecording}
+      style={[
+        styles.btn,
+        {
+          backgroundColor: recording ? colors.tint + "40" : colors.tint + "20",
+        },
+      ]}
     >
-      {isBusy ? (
-        <ActivityIndicator color={colors.tint} />
+      {recording ? (
+        <View style={{ width: 80, height: 80 }}>
+          <VolumeWaveform data={levels} dataSize={BAR_COUNT} />
+        </View>
       ) : (
-        <IconSymbol
-          name={isVoiceAvailable ? "mic.fill" : "mic.slash"}
-          size={32}
-          color={colors.tint}
-        />
+        <IconSymbol name="mic.fill" size={32} color={colors.tint} />
       )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  micButton: {
+  btn: {
     width: 80,
     height: 80,
     borderRadius: 40,

@@ -1,15 +1,17 @@
-import { FlashcardCard } from "@/components/flashcard/FlashcardCard";
-import { PracticeHeader } from "@/components/flashcard/PracticeHeader";
-import { PracticeMicButton } from "@/components/flashcard/PracticeMicButton";
+import React from "react";
+
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { Flashcard } from "@/utils/database";
-import React from "react";
+
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FlashcardCard } from "./FlashcardCard";
+import { PracticeHeader } from "./PracticeHeader";
+import { PracticeMicButton } from "./PracticeMicButton";
 
 interface PracticeModeProps {
-  currentCard: Flashcard | undefined;
+  currentCard?: Flashcard;
   lifetimeCount: number;
   showTranslation: boolean;
   onToggleTranslation: () => void;
@@ -27,44 +29,36 @@ export function PracticeMode({
   const colors = Colors[colorScheme ?? "light"];
 
   return (
-    <View
-      style={[styles.modeContainer, { backgroundColor: colors.background }]}
-    >
-      <SafeAreaView style={styles.safeArea} edges={["top"]}>
-        <View style={styles.practiceContainer}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <View style={styles.container}>
           <PracticeHeader lifetimeCount={lifetimeCount} />
 
-          {/* Flashcard */}
           {currentCard ? (
-            <View style={styles.flashcardContainer}>
+            <View style={styles.center}>
               <FlashcardCard
                 card={currentCard}
                 showTranslation={showTranslation}
                 onToggleTranslation={onToggleTranslation}
               />
 
-              <PracticeMicButton
-                language="fr-FR"
-                expectedText={currentCard.translation}
-                onResult={(spoken, isCorrect) => {
-                  console.log(
-                    "Recognized speech:",
-                    spoken,
-                    "correct:",
-                    isCorrect
-                  );
-                  if (isCorrect) {
-                    onPronunciationCorrect();
-                  }
-                }}
-              />
+              {/*
+                Mic button jest teraz odpowiedzialny WYŁĄCZNIE
+                za nagrywanie + waveform (Skia).
+                Rozpoznawanie / walidacja możesz podpiąć później.
+              */}
+              <PracticeMicButton />
+
+              {/*
+                Jeśli chcesz w przyszłości:
+                - tu możesz dodać feedback "Correct / Incorrect"
+                - albo reakcję na zakończenie nagrywania
+              */}
             </View>
           ) : (
-            <View style={styles.emptyState}>
-              <Text style={[styles.emptyText, { color: colors.text }]}>
-                No flashcards yet. Swipe up with two fingers to add one!
-              </Text>
-            </View>
+            <Text style={[styles.empty, { color: colors.text }]}>
+              No flashcards yet
+            </Text>
           )}
         </View>
       </SafeAreaView>
@@ -73,38 +67,22 @@ export function PracticeMode({
 }
 
 const styles = StyleSheet.create({
-  modeContainer: {
+  root: {
     flex: 1,
   },
-  safeArea: {
+  safe: {
     flex: 1,
   },
-  practiceContainer: {
+  container: {
     flex: 1,
     padding: 20,
     justifyContent: "center",
   },
-  flashcardContainer: {
-    flex: 1,
-    justifyContent: "center",
+  center: {
     alignItems: "center",
     gap: 24,
   },
-  micButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 40,
-  },
-  emptyText: {
-    fontSize: 18,
+  empty: {
     textAlign: "center",
     opacity: 0.7,
   },
