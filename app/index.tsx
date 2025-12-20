@@ -80,6 +80,8 @@ export default function FlashcardScreen() {
               showTranslation={showTranslation}
               onToggleTranslation={() => setShowTranslation(!showTranslation)}
               onPronunciationCorrect={handleCorrect}
+              // Przekazujemy czy tryb to PRACTICE
+              isActive={mode === "PRACTICE"}
             />
           </View>
           <View style={[styles.modeContainer, { top: SCREEN_HEIGHT }]}>

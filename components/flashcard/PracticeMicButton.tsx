@@ -10,7 +10,11 @@ import { VolumeWaveform } from "../VolumeWaveform";
 const NOISE_FLOOR = -50;
 const MAX_LEVEL = -10;
 
-export function PracticeMicButton() {
+interface PracticeMicButtonProps {
+  isActive: boolean;
+}
+
+export function PracticeMicButton({ isActive }: PracticeMicButtonProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -18,36 +22,48 @@ export function PracticeMicButton() {
   const volume = useSharedValue(0);
   const lastUpdateRef = useRef(0);
 
+  // Automatyczne wyłączanie mikrofonu przy zmianie trybu
+  useEffect(() => {
+    if (!isActive && recording) {
+      stopRecording();
+    }
+  }, [isActive, recording]);
+
   useEffect(() => {
     return () => {
       SoundLevel.stop();
     };
   }, []);
 
+  const stopRecording = () => {
+    SoundLevel.stop();
+    setRecording(false);
+    volume.value = withTiming(0, { duration: 300 });
+  };
+
+  const startRecording = () => {
+    SoundLevel.start();
+    SoundLevel.onNewFrame = (data: { value: number }) => {
+      const now = Date.now();
+      if (now - lastUpdateRef.current < 25) return;
+      lastUpdateRef.current = now;
+
+      let val = data.value;
+      if (val < NOISE_FLOOR) val = NOISE_FLOOR;
+      if (val > MAX_LEVEL) val = MAX_LEVEL;
+
+      let normalized = (val - NOISE_FLOOR) / (MAX_LEVEL - NOISE_FLOOR);
+      volume.value = Math.pow(normalized, 1.5);
+    };
+    setRecording(true);
+  };
+
   const toggleRecording = () => {
     if (recording) {
-      SoundLevel.stop();
-      setRecording(false);
-      volume.value = withTiming(0, { duration: 300 });
+      stopRecording();
     } else {
-      SoundLevel.start();
-
-      SoundLevel.onNewFrame = (data: { value: number }) => {
-        const now = Date.now();
-
-        if (now - lastUpdateRef.current < 25) return;
-        lastUpdateRef.current = now;
-
-        let val = data.value;
-        if (val < NOISE_FLOOR) val = NOISE_FLOOR;
-        if (val > MAX_LEVEL) val = MAX_LEVEL;
-
-        let normalized = (val - NOISE_FLOOR) / (MAX_LEVEL - NOISE_FLOOR);
-
-        volume.value = Math.pow(normalized, 1.5);
-      };
-
-      setRecording(true);
+      // Nagrywamy tylko jeśli jesteśmy w aktywnym trybie
+      if (isActive) startRecording();
     }
   };
 
@@ -59,7 +75,6 @@ export function PracticeMicButton() {
     >
       {recording ? (
         <View style={styles.waveformContainer}>
-          {/* Przekazujemy kolor zgodny z theme */}
           <VolumeWaveform volume={volume} color={colors.tint} />
         </View>
       ) : (
@@ -78,7 +93,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   waveformContainer: {
-    width: 100,
-    height: 40,
+    width: 60,
+    height: 32,
   },
 });
