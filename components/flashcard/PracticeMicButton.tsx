@@ -3,22 +3,24 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import {
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import SoundLevel from "react-native-sound-level";
 import { VolumeWaveform } from "../VolumeWaveform";
 
-const BAR_COUNT = 7;
-const THRESHOLD_DB = -50; // minimalny poziom dźwięku, poniżej traktowany jako cisza
+const NOISE_FLOOR = -50; // dół skali (cisza)
+const MAX_LEVEL = -10; // góra skali (głośna mowa)
 
 export function PracticeMicButton() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
   const [recording, setRecording] = useState(false);
-  const [levels, setLevels] = useState<Uint8Array>(
-    new Uint8Array(BAR_COUNT).fill(0)
-  );
+  const volume = useSharedValue(0);
 
-  // Stop monitoring przy odmontowaniu komponentu
   useEffect(() => {
     return () => {
       SoundLevel.stop();
@@ -29,31 +31,30 @@ export function PracticeMicButton() {
     if (recording) {
       SoundLevel.stop();
       setRecording(false);
-      setLevels(new Uint8Array(BAR_COUNT).fill(0));
+      volume.value = withTiming(0, { duration: 300 });
     } else {
       SoundLevel.start();
 
-      SoundLevel.onNewFrame = (data: { value: number; rawValue: number }) => {
-        let value = data.value;
+      SoundLevel.onNewFrame = (data: { value: number }) => {
+        let val = data.value;
 
-        // filtr szumu tła
-        if (value < THRESHOLD_DB) value = THRESHOLD_DB;
+        // 1. Clampowanie wartości
+        if (val < NOISE_FLOOR) val = NOISE_FLOOR;
+        if (val > MAX_LEVEL) val = MAX_LEVEL;
 
-        // normalizacja: THRESHOLD_DB..0 -> 0..255
-        const normalized = Math.min(
-          255,
-          Math.max(
-            0,
-            Math.floor(((value - THRESHOLD_DB) / -THRESHOLD_DB) * 255)
-          )
-        );
+        // 2. Normalizacja do zakresu 0..1
+        let normalized = (val - NOISE_FLOOR) / (MAX_LEVEL - NOISE_FLOOR);
 
-        const newBars = new Uint8Array(BAR_COUNT);
-        for (let i = 0; i < BAR_COUNT; i++) {
-          newBars[i] = normalized * (1 - i / BAR_COUNT);
-        }
+        // 3. Skalowanie potęgowe (Kwadratowe)
+        // Sprawia, że małe dźwięki nie wypełniają całego wykresu
+        normalized = Math.pow(normalized, 2);
 
-        setLevels(newBars);
+        // 4. Płynna aktualizacja SharedValue (120 FPS safe)
+        volume.value = withSpring(normalized, {
+          damping: 20,
+          stiffness: 250,
+          mass: 0.5,
+        });
       };
 
       setRecording(true);
@@ -63,6 +64,7 @@ export function PracticeMicButton() {
   return (
     <TouchableOpacity
       onPress={toggleRecording}
+      activeOpacity={0.8}
       style={[
         styles.btn,
         {
@@ -71,8 +73,8 @@ export function PracticeMicButton() {
       ]}
     >
       {recording ? (
-        <View style={{ width: 80, height: 80 }}>
-          <VolumeWaveform data={levels} dataSize={BAR_COUNT} />
+        <View style={styles.waveformContainer}>
+          <VolumeWaveform volume={volume} />
         </View>
       ) : (
         <IconSymbol name="mic.fill" size={32} color={colors.tint} />
@@ -88,5 +90,9 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: "center",
     alignItems: "center",
+  },
+  waveformContainer: {
+    width: 60, // mniejszy kontener wewnątrz przycisku
+    height: 40,
   },
 });

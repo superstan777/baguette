@@ -1,81 +1,84 @@
-import { RoundedRect, Canvas as SKCanvas } from "@shopify/react-native-skia";
-import React, { useMemo, useState } from "react";
+import { Canvas, Group, RoundedRect } from "@shopify/react-native-skia";
+import React, { useState } from "react";
 import { LayoutChangeEvent, View } from "react-native";
+import {
+  SharedValue,
+  useDerivedValue,
+  withSpring,
+} from "react-native-reanimated";
 
-interface Size {
-  width: number;
-  height: number;
+interface VolumeWaveformProps {
+  volume: SharedValue<number>;
 }
 
-interface Point {
-  x: number;
-  y: number;
-  height: number;
-}
+const BAR_COUNT = 7;
+const GAP_RATIO = 0.35;
 
-interface ChartProps {
-  data: Uint8Array;
-  dataSize: number;
-}
+export const VolumeWaveform: React.FC<VolumeWaveformProps> = ({ volume }) => {
+  const [size, setSize] = useState({ width: 0, height: 0 });
 
-export const VolumeWaveform: React.FC<ChartProps> = ({ data }) => {
-  const [size, setSize] = useState<Size>({ width: 0, height: 0 });
-
-  const BAR_COUNT = 7;
-  const BAR_COLOR = "black";
-  const MIN_BAR_HEIGHT = 5;
-  const RADIUS = 25;
-  const GAP_RATIO = 0.2;
-
-  const onCanvasLayout = (event: LayoutChangeEvent) => {
-    const { width, height } = event.nativeEvent.layout;
-    setSize({ width, height });
+  const onLayout = (event: LayoutChangeEvent) => {
+    setSize(event.nativeEvent.layout);
   };
 
-  const slotWidth = size.width / BAR_COUNT;
-  const barWidth = slotWidth * (1 - GAP_RATIO);
-  const offsetX = (size.width - BAR_COUNT * slotWidth) / 2;
-  const centerY = size.height / 2;
-  const maxBarHalfHeight = size.height / 2 - MIN_BAR_HEIGHT;
-
-  const points = useMemo(() => {
-    if (!data.length || size.width === 0) return [];
-
-    const p: Point[] = [];
-
-    for (let i = 0; i < BAR_COUNT; i++) {
-      const value = data[i] ?? 0; // 0–255
-      const normalized = value / 255;
-
-      const halfHeight = MIN_BAR_HEIGHT + normalized * maxBarHalfHeight;
-
-      const x = offsetX + i * slotWidth + (slotWidth - barWidth) / 2;
-
-      p.push({
-        x,
-        y: centerY - halfHeight,
-        height: halfHeight * 2,
-      });
-    }
-
-    return p;
-  }, [data, size]);
+  if (size.width === 0) return <View style={{ flex: 1 }} onLayout={onLayout} />;
 
   return (
-    <View style={{ flex: 1 }} onLayout={onCanvasLayout}>
-      <SKCanvas style={{ flex: 1 }}>
-        {points.map((point, index) => (
-          <RoundedRect
-            key={index}
-            x={point.x}
-            y={point.y}
-            width={barWidth}
-            height={point.height}
-            r={RADIUS}
-            color={BAR_COLOR}
-          />
-        ))}
-      </SKCanvas>
+    <View style={{ flex: 1 }} onLayout={onLayout}>
+      <Canvas style={{ flex: 1 }}>
+        <Group>
+          {Array.from({ length: BAR_COUNT }).map((_, i) => (
+            <AnimatedBar key={i} index={i} volume={volume} canvasSize={size} />
+          ))}
+        </Group>
+      </Canvas>
     </View>
+  );
+};
+
+const AnimatedBar = ({ index, volume, canvasSize }: any) => {
+  // To jest "magiczny" krok: tworzymy animowaną wartość, która
+  // goni surową wartość z mikrofonu z dużą płynnością.
+  const animatedVolume = useDerivedValue(() => {
+    return withSpring(volume.value, {
+      damping: 15, // Mniejszy damping = bardziej sprężysty ruch
+      stiffness: 120, // Kontroluje szybkość reakcji
+      mass: 0.3,
+    });
+  });
+
+  const barProps = useDerivedValue(() => {
+    const { width, height } = canvasSize;
+    const slotWidth = width / BAR_COUNT;
+    const barWidth = slotWidth * (1 - GAP_RATIO);
+
+    const centerIndex = (BAR_COUNT - 1) / 2;
+    const distFromCenter = Math.abs(index - centerIndex) / centerIndex;
+    const sensitivity = 0.3 + 0.7 * Math.cos(distFromCenter * (Math.PI / 2.5));
+
+    // Używamy animowanej wartości zamiast surowej
+    const v = animatedVolume.value * sensitivity;
+
+    const minH = 4;
+    const maxH = height * 0.9;
+    const currentH = minH + v * (maxH - minH);
+
+    return {
+      x: index * slotWidth + (slotWidth - barWidth) / 2,
+      y: (height - currentH) / 2,
+      w: barWidth,
+      h: currentH,
+    };
+  });
+
+  return (
+    <RoundedRect
+      x={useDerivedValue(() => barProps.value.x)}
+      y={useDerivedValue(() => barProps.value.y)}
+      width={useDerivedValue(() => barProps.value.w)}
+      height={useDerivedValue(() => barProps.value.h)}
+      r={useDerivedValue(() => barProps.value.w / 2)}
+      color="black"
+    />
   );
 };
