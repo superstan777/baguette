@@ -2,7 +2,7 @@ import * as SQLite from "expo-sqlite";
 
 let db: SQLite.SQLiteDatabase | null = null;
 
-export interface Flashcard {
+export interface FlashcardInterface {
   id: number;
   text: string;
   translation: string;
@@ -87,9 +87,9 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
   return db;
 }
 
-export async function getAllFlashcards(): Promise<Flashcard[]> {
+export async function getAllFlashcards(): Promise<FlashcardInterface[]> {
   const database = await initDatabase();
-  const result = await database.getAllAsync<Flashcard>(
+  const result = await database.getAllAsync<FlashcardInterface>(
     "SELECT * FROM flashcards ORDER BY introduced_at DESC"
   );
   return result;

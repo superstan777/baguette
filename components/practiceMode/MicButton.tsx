@@ -12,9 +12,10 @@ const MAX_LEVEL = -10;
 
 interface PracticeMicButtonProps {
   isActive: boolean;
+  onResult: (isCorrect: boolean) => void; // DODANE: Definicja propa
 }
 
-export function PracticeMicButton({ isActive }: PracticeMicButtonProps) {
+export function MicButton({ isActive, onResult }: PracticeMicButtonProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
@@ -22,10 +23,9 @@ export function PracticeMicButton({ isActive }: PracticeMicButtonProps) {
   const volume = useSharedValue(0);
   const lastUpdateRef = useRef(0);
 
-  // Automatyczne wyłączanie mikrofonu przy zmianie trybu
   useEffect(() => {
     if (!isActive && recording) {
-      stopRecording();
+      stopRecording(false); // Zatrzymujemy bez wysyłania wyniku przy zmianie trybu
     }
   }, [isActive, recording]);
 
@@ -35,17 +35,24 @@ export function PracticeMicButton({ isActive }: PracticeMicButtonProps) {
     };
   }, []);
 
-  const stopRecording = () => {
+  const stopRecording = (shouldTriggerResult = true) => {
     SoundLevel.stop();
     setRecording(false);
     volume.value = withTiming(0, { duration: 300 });
+
+    // Wywołujemy wynik tylko jeśli nagrywanie zostało zatrzymane przez użytkownika
+    if (shouldTriggerResult) {
+      // Symulacja: na ten moment zawsze zwracamy sukces (true)
+      // Docelowo tu będzie logika porównywania tekstu
+      onResult(true);
+    }
   };
 
   const startRecording = () => {
     SoundLevel.start();
     SoundLevel.onNewFrame = (data: { value: number }) => {
       const now = Date.now();
-      if (now - lastUpdateRef.current < 25) return;
+      if (now - lastUpdateRef.current < 16) return; // Optymalizacja pod 120fps (ok 8ms-16ms)
       lastUpdateRef.current = now;
 
       let val = data.value;
@@ -60,9 +67,8 @@ export function PracticeMicButton({ isActive }: PracticeMicButtonProps) {
 
   const toggleRecording = () => {
     if (recording) {
-      stopRecording();
+      stopRecording(true);
     } else {
-      // Nagrywamy tylko jeśli jesteśmy w aktywnym trybie
       if (isActive) startRecording();
     }
   };

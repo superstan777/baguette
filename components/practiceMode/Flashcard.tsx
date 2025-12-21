@@ -1,7 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { Flashcard } from "@/utils/database";
+import { FlashcardInterface } from "@/utils/database";
 import * as Speech from "expo-speech";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -13,12 +13,12 @@ import Animated, {
 } from "react-native-reanimated";
 
 interface FlashcardCardProps {
-  card: Flashcard;
+  card: FlashcardInterface;
   showTranslation: boolean;
   onToggleTranslation: () => void;
 }
 
-export function FlashcardCard({
+export function Flashcard({
   card,
   showTranslation,
   onToggleTranslation,

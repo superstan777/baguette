@@ -1,7 +1,7 @@
 import { AddMode } from "@/components/flashcard/AddMode";
-import { PracticeMode } from "@/components/flashcard/PracticeMode";
+
+import { PracticeScreen } from "@/components/practiceMode/PracticeScreen";
 import { Mode, useFlashcardGestures } from "@/hooks/useFlashcardGestures";
-import { useFlashcards } from "@/hooks/useFlashcards";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -26,17 +26,6 @@ export default function FlashcardScreen() {
 
   const inputRef = useRef<TextInput>(null);
 
-  const {
-    flashcards,
-    currentIndex,
-    lifetimeCount,
-    showTranslation,
-    setShowTranslation,
-    handleCorrect,
-    handleIncorrect,
-    handleSave: saveFlashcard,
-  } = useFlashcards();
-
   const { animatedStyle, panGesture } = useFlashcardGestures({
     mode,
     setMode,
@@ -50,40 +39,22 @@ export default function FlashcardScreen() {
     }
   }, [mode]);
 
-  const handleSave = async () => {
-    if (!newFlashcardText.trim()) return;
-
-    setIsSaving(true);
-    setIsTranslating(true);
-    try {
-      await saveFlashcard(newFlashcardText.trim(), true);
-      setNewFlashcardText("");
-      setMode("PRACTICE");
-    } catch (error) {
-      console.error("Error saving flashcard:", error);
-    } finally {
-      setIsSaving(false);
-      setIsTranslating(false);
-    }
+  // Ta funkcja zostanie przekazana do AddMode, by po zapisie wrócić do nauki
+  const handleSaveComplete = () => {
+    setNewFlashcardText("");
+    setMode("PRACTICE");
   };
-
-  const currentCard = flashcards[currentIndex];
 
   return (
     <GestureHandlerRootView style={styles.container}>
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.content, animatedStyle]}>
+          {/* TRYB PRAKTYKI - teraz sam zarządza swoimi danymi */}
           <View style={[styles.modeContainer, { top: 0 }]}>
-            <PracticeMode
-              currentCard={currentCard}
-              lifetimeCount={lifetimeCount}
-              showTranslation={showTranslation}
-              onToggleTranslation={() => setShowTranslation(!showTranslation)}
-              onPronunciationCorrect={handleCorrect}
-              // Przekazujemy czy tryb to PRACTICE
-              isActive={mode === "PRACTICE"}
-            />
+            <PracticeScreen isActive={mode === "PRACTICE"} />
           </View>
+
+          {/* TRYB DODAWANIA */}
           <View style={[styles.modeContainer, { top: SCREEN_HEIGHT }]}>
             <AddMode
               newFlashcardText={newFlashcardText}
@@ -91,7 +62,7 @@ export default function FlashcardScreen() {
               isTranslating={isTranslating}
               inputRef={inputRef}
               onTextChange={setNewFlashcardText}
-              onSave={handleSave}
+              onSave={handleSaveComplete}
             />
           </View>
         </Animated.View>
