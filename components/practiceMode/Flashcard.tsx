@@ -1,7 +1,7 @@
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { FlashcardInterface } from "@/utils/database";
+import type { FlashcardInterface } from "@/utils/database";
 import * as Speech from "expo-speech";
 import React, { useEffect } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -50,8 +50,6 @@ export function Flashcard({
       left: 0,
       right: 0,
       bottom: 0,
-      justifyContent: "center",
-      alignItems: "center",
     };
   });
 
@@ -59,9 +57,10 @@ export function Flashcard({
     <View style={styles.container}>
       <TouchableOpacity
         onPress={onToggleTranslation}
-        activeOpacity={0.9}
+        activeOpacity={1} // USUNIĘTO PÓŁPRZEZROCZYSTOŚĆ: Karta jest stabilna przy kliknięciu
         style={styles.cardPressArea}
       >
+        {/* STRONA A (TEKST) */}
         <Animated.View
           style={[
             styles.flashcard,
@@ -78,6 +77,7 @@ export function Flashcard({
           </Text>
         </Animated.View>
 
+        {/* STRONA B (TŁUMACZENIE) */}
         <Animated.View
           style={[
             styles.flashcard,
@@ -95,9 +95,9 @@ export function Flashcard({
             </Text>
 
             <TouchableOpacity
+              activeOpacity={0.6} // Subtelny feedback tylko dla przycisku głośnika
               style={styles.speakerButton}
               onPress={() => {
-                // Read the French side of the flashcard aloud
                 const textToSpeak = card.translation || card.text;
                 if (textToSpeak) {
                   Speech.stop();
@@ -129,7 +129,6 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
     minHeight: 360,
-    position: "relative",
   },
   flashcard: {
     position: "absolute",
@@ -153,14 +152,6 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "600",
     textAlign: "center",
-    marginBottom: 16,
-  },
-  translationContainer: {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.1)",
-    width: "100%",
   },
   translationText: {
     fontSize: 24,
@@ -170,11 +161,10 @@ const styles = StyleSheet.create({
   translationBackContent: {
     width: "100%",
     alignItems: "center",
-    gap: 16,
+    gap: 24,
   },
   speakerButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    padding: 12,
     borderRadius: 999,
   },
 });
