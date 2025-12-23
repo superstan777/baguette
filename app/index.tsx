@@ -1,4 +1,4 @@
-import { AddMode } from "@/components/flashcard/AddMode";
+import { AddModeScreen } from "@/components/addMode/addModeScreen";
 import { PracticeScreen } from "@/components/practiceMode/PracticeScreen";
 import { Mode, useFlashcardGestures } from "@/hooks/useFlashcardGestures";
 import React, { useEffect, useRef, useState } from "react";
@@ -48,7 +48,7 @@ export default function FlashcardScreen() {
 
           {/* TRYB DODAWANIA - komponent teraz sam zarządza swoim stanem zapisu */}
           <View style={[styles.modeContainer, { top: SCREEN_HEIGHT }]}>
-            <AddMode inputRef={inputRef} />
+            <AddModeScreen inputRef={inputRef} />
           </View>
         </Animated.View>
       </GestureDetector>

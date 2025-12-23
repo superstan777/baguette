@@ -11,7 +11,7 @@ interface AddModeProps {
   inputRef: RefObject<TextInput | null>;
 }
 
-export function AddMode({ inputRef }: AddModeProps) {
+export function AddModeScreen({ inputRef }: AddModeProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
   const [text, setText] = useState("");
