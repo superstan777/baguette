@@ -6,7 +6,7 @@ export type StatusType = "idle" | "loading" | "success" | "error";
 
 export function useAddFlashcard() {
   const [statusType, setStatusType] = useState<StatusType>("idle");
-  const [statusText, setStatusText] = useState("Save");
+  const [statusText, setStatusText] = useState("Add");
 
   const isValidInput = (input: string): boolean => {
     const letterRegex = /\p{L}/u;
@@ -17,7 +17,7 @@ export function useAddFlashcard() {
   const resetStatus = () => {
     if (statusType === "error" || statusType === "success") {
       setStatusType("idle");
-      setStatusText("Save");
+      setStatusText("Add");
     }
   };
 
@@ -46,12 +46,12 @@ export function useAddFlashcard() {
       await addFlashcard(trimmedText, translation);
 
       setStatusType("success");
-      setStatusText("Saved!");
+      setStatusText("Added!");
 
       // Automatyczny powrót do IDLE po sukcesie
       setTimeout(() => {
         setStatusType("idle");
-        setStatusText("Save");
+        setStatusText("Add");
       }, 1500);
 
       return true;

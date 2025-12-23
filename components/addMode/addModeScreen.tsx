@@ -54,7 +54,7 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
                 Add flashcard
               </Text>
               <Text style={[styles.addSubtitle, { color: colors.icon }]}>
-                Type a word to translate and save
+                Type a word to translate and add flashcard
               </Text>
             </View>
 
