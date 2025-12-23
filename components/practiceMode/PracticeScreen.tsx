@@ -1,7 +1,8 @@
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useFlashcards } from "@/hooks/useFlashcards";
-import React, { useRef, useState } from "react";
+import { usePracticeActions } from "@/hooks/usePracticeActions";
+import React, { useCallback, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CardsStack } from "../practiceMode/CardsStack";
@@ -17,51 +18,62 @@ export function PracticeScreen({ isActive }: PracticeModeProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? "light"];
 
-  // Ref do bezpośredniego sterowania animacjami na wątku UI
+  // 1. Pobieranie danych (tylko DB)
+  const { flashcards, lifetimeCount, refresh } = useFlashcards();
+
+  // 2. Lokalny stan UI sesji nauki
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [errorCount, setErrorCount] = useState(0);
+  const [processingResult, setProcessingResult] = useState(false);
+
+  // Ref do sterowania animacjami na wątku UI
   const stackRef = useRef<any>(null);
 
-  const {
-    flashcards,
-    currentIndex,
-    lifetimeCount,
-    showTranslation,
-    setShowTranslation,
-    handleCorrect,
-    handleIncorrect,
-  } = useFlashcards();
-
-  const [errorCount, setErrorCount] = useState(0);
-
   const currentCard = flashcards[currentIndex];
-  const nextCard = flashcards[currentIndex + 1];
+  const nextCard = flashcards[currentIndex + 1] || flashcards[0]; // Zapętlenie lub następna
+
+  // 3. Akcje praktyki (logika sukcesu/porażki)
+  const { handleCorrect, handleIncorrect } = usePracticeActions({
+    currentCard,
+    refreshData: refresh,
+    onSuccess: useCallback(() => {
+      setShowTranslation(false);
+      setErrorCount(0);
+      setCurrentIndex((prev) => (prev + 1) % flashcards.length);
+      setProcessingResult(false);
+    }, [flashcards.length]),
+    onFail: useCallback(() => {
+      setShowTranslation(true);
+      setProcessingResult(false);
+    }, []),
+  });
 
   /**
-   * Wywoływane po zakończeniu animacji wylotu (swipe) na ekranie.
-   * Dzięki temu dane w React zmieniają się, gdy stara karta jest już niewidoczna.
+   * Wywoływane po zakończeniu animacji wylotu (swipe).
+   * Teraz wywołuje akcje z hooka usePracticeActions.
    */
   const handleAnimationComplete = (success: boolean) => {
     if (success) {
       handleCorrect();
-      setErrorCount(0);
     } else {
       handleIncorrect();
-      setErrorCount(0);
     }
-    // Po zmianie danych, CardsStack zresetuje pozycję nowej karty (useEffect wewnątrz)
   };
 
   const onMicResult = (isCorrect: boolean) => {
+    if (processingResult || !currentCard) return;
+
     if (isCorrect) {
-      // Wydajemy rozkaz: "Leć w prawo" (UI Thread)
+      setProcessingResult(true);
       stackRef.current?.swipeRight();
     } else {
       const newErrors = errorCount + 1;
       if (newErrors >= 3) {
-        // Wydajemy rozkaz: "Leć w lewo" (UI Thread)
+        setProcessingResult(true);
         stackRef.current?.swipeLeft();
       } else {
         setErrorCount(newErrors);
-        // Wydajemy rozkaz: "Potrząśnij" (UI Thread)
         stackRef.current?.shake();
       }
     }
