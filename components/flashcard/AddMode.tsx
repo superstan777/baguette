@@ -3,14 +3,7 @@ import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAddFlashcard } from "@/hooks/useAddFlashcard";
 import React, { RefObject, useState } from "react";
-import {
-  Keyboard,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View,
-} from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -42,32 +35,30 @@ export function AddMode({ inputRef }: AddModeProps) {
           behavior="padding"
           style={styles.keyboardAvoidingView}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <View style={styles.addContainer}>
-              <View style={styles.addHeader}>
-                <Text style={[styles.addTitle, { color: colors.text }]}>
-                  Quick Add
-                </Text>
-                <Text style={[styles.addSubtitle, { color: colors.icon }]}>
-                  Type a word to translate and save
-                </Text>
-              </View>
+          <View style={styles.addContainer}>
+            <View style={styles.addHeader}>
+              <Text style={[styles.addTitle, { color: colors.text }]}>
+                Add flashcard
+              </Text>
+              <Text style={[styles.addSubtitle, { color: colors.icon }]}>
+                Type a word to translate and save
+              </Text>
+            </View>
 
-              <View style={styles.inputContainer}>
-                <TextInput
-                  ref={inputRef}
-                  style={[
-                    styles.input,
-                    { color: colors.text, borderColor: colors.icon + "40" },
-                  ]}
-                  placeholder="e.g. apple"
-                  placeholderTextColor={colors.icon + "80"}
-                  value={text}
-                  onChangeText={setText}
-                  onSubmitEditing={onSavePress}
-                  blurOnSubmit={false}
-                />
-              </View>
+            <View style={styles.inputContainer}>
+              <TextInput
+                ref={inputRef}
+                style={[
+                  styles.input,
+                  { color: colors.text, borderColor: colors.icon + "40" },
+                ]}
+                placeholder="e.g. apple"
+                placeholderTextColor={colors.icon + "80"}
+                value={text}
+                onChangeText={setText}
+                onSubmitEditing={onSavePress}
+                submitBehavior="submit"
+              />
 
               <Button
                 title={statusText}
@@ -75,10 +66,10 @@ export function AddMode({ inputRef }: AddModeProps) {
                 disabled={isSaving || !text.trim()}
                 loading={isSaving}
                 variant="primary"
-                fullWidth
+                style={styles.saveButton}
               />
             </View>
-          </TouchableWithoutFeedback>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </View>
@@ -89,16 +80,30 @@ const styles = StyleSheet.create({
   modeContainer: { flex: 1 },
   safeArea: { flex: 1 },
   keyboardAvoidingView: { flex: 1 },
-  addContainer: { flex: 1, paddingHorizontal: 24, justifyContent: "center" },
-  addHeader: { marginBottom: 40, alignItems: "center" },
+  addContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    justifyContent: "flex-end",
+  },
+  addHeader: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
   addTitle: { fontSize: 32, fontWeight: "800", marginBottom: 8 },
   addSubtitle: { fontSize: 16, opacity: 0.7 },
-  inputContainer: { marginBottom: 32 },
+  inputContainer: {
+    gap: 16,
+    marginVertical: 16,
+  },
   input: {
     borderWidth: 2,
-    borderRadius: 16,
+    borderRadius: 30,
+    height: 60,
     padding: 20,
     fontSize: 20,
-    textAlign: "center",
+  },
+  saveButton: {
+    height: 60,
+    borderRadius: 30,
   },
 });
