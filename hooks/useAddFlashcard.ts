@@ -13,7 +13,6 @@ export function useAddFlashcard() {
     return letterRegex.test(input);
   };
 
-  // Czyści stan błędu lub sukcesu, jeśli użytkownik zacznie edytować tekst
   const resetStatus = () => {
     if (statusType === "error" || statusType === "success") {
       setStatusType("idle");
@@ -48,7 +47,6 @@ export function useAddFlashcard() {
       setStatusType("success");
       setStatusText("Added!");
 
-      // Automatyczny powrót do IDLE po sukcesie
       setTimeout(() => {
         setStatusType("idle");
         setStatusText("Add");
