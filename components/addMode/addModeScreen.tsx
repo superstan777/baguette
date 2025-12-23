@@ -2,9 +2,13 @@ import { Button } from "@/components/button";
 import { Colors } from "@/constants/theme";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useAddFlashcard } from "@/hooks/useAddFlashcard";
+
+import { useButtonFeedback } from "@/hooks/useButtonFeedback";
+
 import React, { RefObject, useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 interface AddModeProps {
@@ -19,6 +23,9 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
   const { handleSave, resetStatus, isSaving, statusText, statusType } =
     useAddFlashcard();
 
+  // Cała logika animacji koloru i skali zamknięta w nowym hooku
+  const buttonFeedbackStyle = useButtonFeedback(statusType, colors.tint);
+
   const onSavePress = async () => {
     const success = await handleSave(text);
     if (success) {
@@ -27,23 +34,10 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
     }
   };
 
-  const handleTextChange = (value: string) => {
-    setText(value);
-    resetStatus(); // Usuwa wizualizację błędu, gdy user zaczyna pisać
+  const handleTextChange = (v: string) => {
+    setText(v);
+    resetStatus();
   };
-
-  const getButtonBackgroundColor = () => {
-    if (statusType === "error") return "#FF4444";
-    if (statusType === "success") return "#4ADE80";
-    return undefined;
-  };
-
-  const dynamicButtonStyle = StyleSheet.flatten([
-    styles.saveButton,
-    getButtonBackgroundColor()
-      ? { backgroundColor: getButtonBackgroundColor() }
-      : {},
-  ]);
 
   return (
     <View
@@ -76,16 +70,16 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
                 value={text}
                 onChangeText={handleTextChange}
                 onSubmitEditing={onSavePress}
-                submitBehavior="submit"
               />
 
-              <Button
-                title={statusText}
-                onPress={onSavePress}
-                loading={isSaving}
-                variant="primary"
-                style={dynamicButtonStyle}
-              />
+              <Animated.View style={[styles.saveButton, buttonFeedbackStyle]}>
+                <Button
+                  title={statusText}
+                  onPress={onSavePress}
+                  loading={isSaving}
+                  style={styles.innerButton}
+                />
+              </Animated.View>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -107,8 +101,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  addTitle: { fontSize: 32, fontWeight: "800", marginBottom: 8 },
-  addSubtitle: { fontSize: 16, opacity: 0.7 },
+  addTitle: {
+    fontSize: 32,
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  addSubtitle: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
   inputContainer: {
     gap: 16,
     marginVertical: 16,
@@ -121,7 +122,12 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   saveButton: {
-    height: 60,
     borderRadius: 30,
+    overflow: "hidden",
+    height: 60,
+  },
+  innerButton: {
+    backgroundColor: "transparent",
+    height: 60,
   },
 });
