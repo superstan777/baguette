@@ -26,10 +26,8 @@ export default function FlashcardScreen() {
     setMode,
   });
 
-  // Obsługa autofokusa po przejściu do trybu dodawania
   useEffect(() => {
     if (mode === "ADD") {
-      // Mały timeout zapewnia, że animacja się skończyła przed otwarciem klawiatury
       const timer = setTimeout(() => inputRef.current?.focus(), 100);
       return () => clearTimeout(timer);
     } else {
@@ -41,12 +39,10 @@ export default function FlashcardScreen() {
     <GestureHandlerRootView style={styles.container}>
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.content, animatedStyle]}>
-          {/* TRYB PRAKTYKI */}
           <View style={[styles.modeContainer, { top: 0 }]}>
             <PracticeScreen isActive={mode === "PRACTICE"} />
           </View>
 
-          {/* TRYB DODAWANIA - komponent teraz sam zarządza swoim stanem zapisu */}
           <View style={[styles.modeContainer, { top: SCREEN_HEIGHT }]}>
             <AddModeScreen inputRef={inputRef} />
           </View>

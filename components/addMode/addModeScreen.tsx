@@ -16,7 +16,8 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
   const colors = Colors[colorScheme ?? "light"];
   const [text, setText] = useState("");
 
-  const { handleSave, isSaving, statusText } = useAddFlashcard();
+  const { handleSave, resetStatus, isSaving, statusText, statusType } =
+    useAddFlashcard();
 
   const onSavePress = async () => {
     const success = await handleSave(text);
@@ -25,6 +26,24 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
       inputRef.current?.focus();
     }
   };
+
+  const handleTextChange = (value: string) => {
+    setText(value);
+    resetStatus(); // Usuwa wizualizację błędu, gdy user zaczyna pisać
+  };
+
+  const getButtonBackgroundColor = () => {
+    if (statusType === "error") return "#FF4444";
+    if (statusType === "success") return "#4ADE80";
+    return undefined;
+  };
+
+  const dynamicButtonStyle = StyleSheet.flatten([
+    styles.saveButton,
+    getButtonBackgroundColor()
+      ? { backgroundColor: getButtonBackgroundColor() }
+      : {},
+  ]);
 
   return (
     <View
@@ -55,7 +74,7 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
                 placeholder="e.g. apple"
                 placeholderTextColor={colors.icon + "80"}
                 value={text}
-                onChangeText={setText}
+                onChangeText={handleTextChange}
                 onSubmitEditing={onSavePress}
                 submitBehavior="submit"
               />
@@ -63,10 +82,9 @@ export function AddModeScreen({ inputRef }: AddModeProps) {
               <Button
                 title={statusText}
                 onPress={onSavePress}
-                disabled={isSaving || !text.trim()}
                 loading={isSaving}
                 variant="primary"
-                style={styles.saveButton}
+                style={dynamicButtonStyle}
               />
             </View>
           </View>
@@ -99,7 +117,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: 30,
     height: 60,
-    padding: 20,
+    paddingHorizontal: 20,
     fontSize: 20,
   },
   saveButton: {

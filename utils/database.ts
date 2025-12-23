@@ -17,14 +17,18 @@ export interface Stats {
   value: string;
 }
 
+/**
+ * Inicjalizuje bazę danych SQLite dla hiszpańskich fiszek
+ */
 export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (db) {
     return db;
   }
 
-  db = await SQLite.openDatabaseAsync("flashcards_test.db");
+  // Zmieniono nazwę na spanish, aby uniknąć konfliktów ze starymi danymi francuskimi
+  db = await SQLite.openDatabaseAsync("flashcards_spanish.db");
 
-  // Create flashcards table
+  // Tabela fiszek
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS flashcards (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,7 +41,7 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     );
   `);
 
-  // Create stats table
+  // Tabela statystyk
   await db.execAsync(`
     CREATE TABLE IF NOT EXISTS stats (
       key TEXT PRIMARY KEY,
@@ -45,7 +49,7 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     );
   `);
 
-  // Initialize lifetime counter if it doesn't exist
+  // Inicjalizacja licznika lifetime_count
   const counterResult = await db.getFirstAsync<Stats>(
     "SELECT * FROM stats WHERE key = ?",
     ["lifetime_count"]
@@ -58,22 +62,18 @@ export async function initDatabase(): Promise<SQLite.SQLiteDatabase> {
     ]);
   }
 
-  // Add mock data if database is empty
+  // Dodanie danych testowych (Mock data) dla języka HISZPAŃSKIEGO
   const flashcardCount = await db.getFirstAsync<{ count: number }>(
     "SELECT COUNT(*) as count FROM flashcards"
   );
 
   if (flashcardCount && flashcardCount.count === 0) {
     const mockData = [
-      { text: "Hello", translation: "Bonjour", introduced_at: Date.now() },
-      { text: "Thank you", translation: "Merci", introduced_at: Date.now() },
-      { text: "Goodbye", translation: "Au revoir", introduced_at: Date.now() },
-      {
-        text: "Please",
-        translation: "S'il vous plaît",
-        introduced_at: Date.now(),
-      },
-      { text: "Yes", translation: "Oui", introduced_at: Date.now() },
+      { text: "Hello", translation: "Hola", introduced_at: Date.now() },
+      { text: "Thank you", translation: "Gracias", introduced_at: Date.now() },
+      { text: "Goodbye", translation: "Adiós", introduced_at: Date.now() },
+      { text: "Please", translation: "Por favor", introduced_at: Date.now() },
+      { text: "Yes", translation: "Sí", introduced_at: Date.now() },
     ];
 
     for (const card of mockData) {
